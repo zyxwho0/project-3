@@ -1,0 +1,42 @@
+name: Auto PR & Merge
+
+on:
+  schedule:
+    - cron: "0 0 * * *"  # Daily at midnight UTC (7 PM EST)
+
+jobs:
+  auto-pr:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Checkout the repo
+      - uses: actions/checkout@v4
+
+      # 2. Make changes (example: update a file)
+      - name: Update example file
+        run: |
+          echo "Updated at $(date)" >> update.txt
+
+      # 3. Configure git
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      # 4. Commit changes
+      - name: Commit changes
+        run: |
+          git add .
+          git commit -m "Automated update [skip ci]" || echo "No changes to commit"
+
+      # 5. Create Pull Request with auto-merge enabled
+      - name: Create Pull Request with Auto-Merge
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Automated update
+          branch: auto-update-branch
+          base: main
+          title: "Automated Update"
+          body: "This PR was created automatically by GitHub Actions and will merge automatically once all requirements are met."
+          labels: automated
+          delete-branch: true
