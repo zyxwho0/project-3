@@ -1,0 +1,8 @@
+# Specify default owners for the entire repository
+*       @zyxwho0
+
+# Specify owners for a specific folder
+/docs/  @zyxwho0
+
+# Specify owners for all Python files in a folder
+/scripts/*.py   @zyxwho0
