@@ -46,3 +46,8 @@ def is_palindrome(s):
     """Return True if string s is a palindrome (case-insensitive, ignoring spaces), False otherwise."""
     cleaned = s.lower().replace(" ", "")
     return cleaned == cleaned[::-1]
+
+
+if __name__ == "__main__":
+    print("Hello, World!")
+    
