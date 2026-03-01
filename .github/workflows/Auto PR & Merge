@@ -1,0 +1,53 @@
+name: Auto PR & Merge
+
+on:
+  push:
+    branches:
+      - main   # Trigger when main branch is updated
+  schedule:
+    - cron: "0 2 * * *" # Optional: runs every day at 2am UTC
+
+jobs:
+  auto-pr:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Checkout the repo
+      - uses: actions/checkout@v3
+
+      # 2. Make changes (example: update a file)
+      - name: Update example file
+        run: |
+          echo "Updated at $(date)" >> update.txt
+
+      # 3. Configure git
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      # 4. Commit changes
+      - name: Commit changes
+        run: |
+          git add .
+          git commit -m "Automated update [skip ci]" || echo "No changes to commit"
+
+      # 5. Create Pull Request
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Automated update
+          branch: auto-update-branch
+          base: main
+          title: "Automated Update"
+          body: "This PR was created automatically by GitHub Actions."
+          labels: automated
+
+      # 6. Auto Merge PR when checks pass
+      - name: Auto Merge PR
+        uses: peter-evans/merge-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          merge-method: squash   # options: merge, squash, rebase
+          commit-message: "Merged automatically"
+          merge-labels: automated
