@@ -5,7 +5,7 @@ on:
     branches:
       - main   # Trigger when main branch is updated
   schedule:
-    - cron: "0 2 * * *" # Optional: runs every day at 2am UTC
+    - cron: "0 0 * * *"  # Runs every day at 7 PM EST
 
 jobs:
   auto-pr:
