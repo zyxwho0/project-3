@@ -28,12 +28,6 @@ jobs:
         run: |
           echo "Updated at $(date)" >> update.txt
 
-      - name: Commit and push
-        run: |
-          git add .
-          git commit -m "Automated update" || echo "No changes"
-          git push origin auto-update-branch
-
       - name: Create or update PR
         id: create_pr
         uses: peter-evans/create-pull-request@v5
