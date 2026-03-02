@@ -1,32 +1,92 @@
+"""Sample module containing basic utility functions for mathematical operations.
+
+This module provides functions for mathematical operations and string
+manipulations including addition, subtraction, multiplication, division,
+factorial calculation, and palindrome detection.
+"""
+
+
 def add(a, b):
-    """Return the sum of two numbers."""
+    """Return the sum of two numbers.
+
+    Args:
+        a: First number
+        b: Second number
+
+    Returns:
+        The sum of a and b
+    """
     return a + b
 
 
 def subtract(a, b):
-    """Return the difference of two numbers."""
+    """Return the difference of two numbers.
+
+    Args:
+        a: First number
+        b: Second number
+
+    Returns:
+        The difference of a and b
+    """
     return a - b
 
 
 def multiply(a, b):
-    """Return the product of two numbers."""
+    """Return the product of two numbers.
+
+    Args:
+        a: First number
+        b: Second number
+
+    Returns:
+        The product of a and b
+    """
     return a * b
 
 
 def divide(a, b):
-    """Return the quotient of two numbers. Raises ValueError if b is zero."""
+    """Return the quotient of two numbers.
+
+    Args:
+        a: Dividend
+        b: Divisor
+
+    Returns:
+        The quotient of a and b
+
+    Raises:
+        ValueError: If b is zero
+    """
     if b == 0:
         raise ValueError("Cannot divide by zero.")
     return a / b
 
 
 def is_even(n):
-    """Return True if n is even, False otherwise."""
+    """Return True if n is even, False otherwise.
+
+    Args:
+        n: An integer
+
+    Returns:
+        True if n is even, False otherwise
+    """
     return n % 2 == 0
 
 
 def factorial(n):
-    """Return the factorial of a non-negative integer n."""
+    """Return the factorial of a non-negative integer n.
+
+    Args:
+        n: A non-negative integer
+
+    Returns:
+        The factorial of n
+
+    Raises:
+        ValueError: If n is negative
+    """
     if n < 0:
         raise ValueError("Factorial is not defined for negative numbers.")
     if n == 0:
@@ -38,16 +98,31 @@ def factorial(n):
 
 
 def reverse_string(s):
-    """Return the reverse of string s."""
+    """Return the reverse of string s.
+
+    Args:
+        s: A string
+
+    Returns:
+        The reverse of string s
+    """
     return s[::-1]
 
 
 def is_palindrome(s):
-    """Return True if string s is a palindrome (case-insensitive, ignoring spaces), False otherwise."""
+    """Return True if string s is a palindrome.
+
+    Comparison is case-insensitive and ignores spaces.
+
+    Args:
+        s: A string
+
+    Returns:
+        True if s is a palindrome, False otherwise
+    """
     cleaned = s.lower().replace(" ", "")
     return cleaned == cleaned[::-1]
 
 
 if __name__ == "__main__":
     print("Hello, World!")
-    
