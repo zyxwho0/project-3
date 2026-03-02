@@ -1,10 +1,16 @@
 import random
 
+CHOICES = ["rock", "paper", "scissors"]
+WINNING_COMBINATIONS = {
+    "rock": "scissors",
+    "paper": "rock",
+    "scissors": "paper",
+}
+
 
 def get_computer_choice():
     """Return a random choice for the computer."""
-    choices = ["rock", "paper", "scissors"]
-    return random.choice(choices)
+    return random.choice(CHOICES)
 
 
 def get_user_choice():
@@ -18,23 +24,16 @@ def get_user_choice():
 
 def determine_winner(user_choice, computer_choice):
     """Determine the winner and return the result."""
-    if user_choice == computer_choice:
-        return "tie"
-    
-    winning_combinations = {
-        "rock": "scissors",
-        "paper": "rock",
-        "scissors": "paper"
-    }
-
-    # Validate inputs to ensure a well-defined failure mode
-    valid_choices = set(winning_combinations.keys())
+    valid_choices = set(WINNING_COMBINATIONS.keys())
     if user_choice not in valid_choices:
         raise ValueError(f"Invalid user_choice: {user_choice!r}. Expected one of: {sorted(valid_choices)}")
     if computer_choice not in valid_choices:
         raise ValueError(f"Invalid computer_choice: {computer_choice!r}. Expected one of: {sorted(valid_choices)}")
-    
-    if winning_combinations[user_choice] == computer_choice:
+
+    if user_choice == computer_choice:
+        return "tie"
+
+    if WINNING_COMBINATIONS[user_choice] == computer_choice:
         return "user"
     return "computer"
 
