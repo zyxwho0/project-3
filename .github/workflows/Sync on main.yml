@@ -1,28 +1,45 @@
-name: Auto PR & Merge_2
+name: Auto PR & Merge
 
 on:
   schedule:
-    - cron: "45 0 * * *"  # 7:45 PM EST (12:45 AM UTC)
-  workflow_dispatch:  # Allows manual trigger
+    - cron: "45 0 * * *"  # Daily at 7:45 PM EST (12:45 AM UTC)
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   auto-pr-and-merge:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          ref: auto-update-branch
           fetch-depth: 0
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Configure Git
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
+      - name: Setup auto-update-branch
+        run: |
+          git fetch origin
+          if git ls-remote --exit-code --heads origin auto-update-branch > /dev/null 2>&1; then
+            git checkout auto-update-branch
+          else
+            git checkout -b auto-update-branch
+          fi
+
       - name: Sync with latest main
         run: |
           git fetch origin main
-          git rebase origin/main || true
+          git merge origin/main --no-edit || {
+            echo "Merge conflict detected, aborting merge and continuing"
+            git merge --abort
+          }
 
       - name: Make changes
         run: |
@@ -31,24 +48,38 @@ jobs:
       - name: Commit and push
         run: |
           git add .
-          git commit -m "Automated update" || echo "No changes"
-          git push origin auto-update-branch
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Automated update: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            git push origin auto-update-branch
+          fi
 
       - name: Create or update PR
         id: create_pr
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          branch: auto-update-branch
-          base: main
-          title: "Automated Update"
-          body: "Auto-generated PR with latest changes"
-          labels: automated
-          delete-branch: true
-
-      - name: Auto-merge PR
-        if: steps.create_pr.outputs.pull-request-number
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          gh pr merge --squash --auto ${{ steps.create_pr.outputs.pull-request-number }}
+          EXISTING_PR=$(gh pr list --head auto-update-branch --base main --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #$EXISTING_PR already exists"
+            echo "pr_number=$EXISTING_PR" >> "$GITHUB_OUTPUT"
+          else
+            PR_URL=$(gh pr create \
+              --head auto-update-branch \
+              --base main \
+              --title "Automated Update" \
+              --body "Auto-generated PR with latest changes" \
+              --label automated)
+            PR_NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$')
+            echo "Created PR #$PR_NUMBER"
+            echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Enable auto-merge
+        if: steps.create_pr.outputs.pr_number != ''
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          gh pr merge --squash --auto --delete-branch ${{ steps.create_pr.outputs.pr_number }} || echo "Auto-merge could not be enabled - branch protection rules may need to be configured"
