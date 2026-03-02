@@ -1,4 +1,4 @@
-name: Auto PR & Merge
+name: Auto PR & Merge_2
 
 on:
   schedule:
@@ -27,6 +27,12 @@ jobs:
       - name: Make changes
         run: |
           echo "Updated at $(date)" >> update.txt
+
+      - name: Commit and push
+        run: |
+          git add .
+          git commit -m "Automated update" || echo "No changes"
+          git push origin auto-update-branch
 
       - name: Create or update PR
         id: create_pr
