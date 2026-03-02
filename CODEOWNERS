@@ -1,0 +1,5 @@
+# Specify default owners for the entire repository
+*       @dave
+
+# Specify owners for a specific folder
+/docs/  @zyxwho0
