@@ -1,4 +1,4 @@
-name: Auto PR & Merge
+name: Auto PR & Merge-old
 
 on:
   schedule:
