@@ -1,0 +1,102 @@
+name: Auto PR & Merge
+
+on:
+  schedule:
+    - cron: "45 0 * * *"  # Daily at 7:45 PM EST (12:45 AM UTC)
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-pr-and-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Setup auto-update-branch
+        run: |
+          git fetch origin
+          if git ls-remote --exit-code --heads origin auto-update-branch > /dev/null 2>&1; then
+            git checkout auto-update-branch
+          else
+            git checkout -b auto-update-branch
+          fi
+
+      - name: Sync with latest main
+        run: |
+          git fetch origin main
+          COMMITS=$(git log HEAD..origin/main --reverse --format="%H")
+          if [ -z "$COMMITS" ]; then
+            echo "No new commits to cherry-pick from main"
+          else
+            echo "$COMMITS" | while read -r COMMIT; do
+              PARENT_COUNT=$(git rev-list --parents -n 1 "$COMMIT" | awk '{print NF-1}')
+              if [ "$PARENT_COUNT" -gt 1 ]; then
+                echo "Merge commit detected: $COMMIT (parents: $PARENT_COUNT), cherry-picking with -m 1"
+                git cherry-pick -m 1 "$COMMIT" || {
+                  echo "Warning: cherry-pick conflict on merge commit $COMMIT, skipping and aborting"
+                  git cherry-pick --abort
+                }
+              else
+                echo "Regular commit: $COMMIT, cherry-picking normally"
+                git cherry-pick "$COMMIT" || {
+                  echo "Warning: cherry-pick conflict on commit $COMMIT, skipping and aborting"
+                  git cherry-pick --abort
+                }
+              fi
+            done
+          fi
+
+      - name: Make changes
+        run: |
+          echo "Updated at $(date)" >> update.txt
+
+      - name: Commit and push
+        run: |
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Automated update: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            git push origin auto-update-branch
+          fi
+
+      - name: Create or update PR
+        id: create_pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          EXISTING_PR=$(gh pr list --head auto-update-branch --base main --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #$EXISTING_PR already exists"
+            echo "pr_number=$EXISTING_PR" >> "$GITHUB_OUTPUT"
+          else
+            PR_URL=$(gh pr create \
+              --head auto-update-branch \
+              --base main \
+              --title "Automated Update" \
+              --body "Auto-generated PR with latest changes" \
+              --label automated)
+            PR_NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$')
+            echo "Created PR #$PR_NUMBER"
+            echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Enable auto-merge
+        if: steps.create_pr.outputs.pr_number != ''
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          gh pr merge --squash --auto --delete-branch ${{ steps.create_pr.outputs.pr_number }} || echo "Auto-merge could not be enabled - branch protection rules may need to be configured"
