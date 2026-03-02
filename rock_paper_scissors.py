@@ -26,6 +26,13 @@ def determine_winner(user_choice, computer_choice):
         "paper": "rock",
         "scissors": "paper"
     }
+
+    # Validate inputs to ensure a well-defined failure mode
+    valid_choices = set(winning_combinations.keys())
+    if user_choice not in valid_choices:
+        raise ValueError(f"Invalid user_choice: {user_choice!r}. Expected one of: {sorted(valid_choices)}")
+    if computer_choice not in valid_choices:
+        raise ValueError(f"Invalid computer_choice: {computer_choice!r}. Expected one of: {sorted(valid_choices)}")
     
     if winning_combinations[user_choice] == computer_choice:
         return "user"
