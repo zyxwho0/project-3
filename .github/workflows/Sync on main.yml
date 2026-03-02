@@ -36,10 +36,27 @@ jobs:
       - name: Sync with latest main
         run: |
           git fetch origin main
-          git merge origin/main --no-edit || {
-            echo "Merge conflict detected, aborting merge and continuing"
-            git merge --abort
-          }
+          COMMITS=$(git log HEAD..origin/main --reverse --format="%H")
+          if [ -z "$COMMITS" ]; then
+            echo "No new commits to cherry-pick from main"
+          else
+            echo "$COMMITS" | while read -r COMMIT; do
+              PARENT_COUNT=$(git rev-list --parents -n 1 "$COMMIT" | awk '{print NF-1}')
+              if [ "$PARENT_COUNT" -gt 1 ]; then
+                echo "Merge commit detected: $COMMIT (parents: $PARENT_COUNT), cherry-picking with -m 1"
+                git cherry-pick -m 1 "$COMMIT" || {
+                  echo "Warning: cherry-pick conflict on merge commit $COMMIT, skipping and aborting"
+                  git cherry-pick --abort
+                }
+              else
+                echo "Regular commit: $COMMIT, cherry-picking normally"
+                git cherry-pick "$COMMIT" || {
+                  echo "Warning: cherry-pick conflict on commit $COMMIT, skipping and aborting"
+                  git cherry-pick --abort
+                }
+              fi
+            done
+          fi
 
       - name: Make changes
         run: |
