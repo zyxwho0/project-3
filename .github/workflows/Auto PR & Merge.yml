@@ -19,11 +19,6 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-      - name: Commit changes
-        run: |
-          git add .
-          git commit -m "Automated update [skip ci]" || echo "No changes to commit"
-
       - name: Create Pull Request
         id: create_pr
         uses: peter-evans/create-pull-request@v5
